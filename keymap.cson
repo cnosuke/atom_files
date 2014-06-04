@@ -16,3 +16,10 @@
 #   'ctrl-P': 'core:move-up'
 #   'ctrl-p': 'core:move-down'
 #
+
+'body':
+  'ctrl-;': 'pane:show-previous-item'
+  'ctrl-\'': 'pane:show-next-item'
+
+'.editor':
+  'cmd-alt-l': 'editor:auto-indent'

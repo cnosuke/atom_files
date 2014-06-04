@@ -7,6 +7,12 @@
 'metrics':
   'userId': 'c094c70bdb21734cea87762ab7a9ee12d433505f'
 'editor':
+  'showInvisibles': true
+  'invisibles':
+    'cr': '↩'
+    'eol': ''
+    'space': '·'
+    'tab': '⇥'
   'fontSize': 14
 'core':
   'themes': [
