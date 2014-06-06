@@ -1,0 +1,78 @@
+@import "colors.less";
+@import "fonts.less";
+@import "icons.less";
+
+// Checklist icon
+.file-icon-TODO:before { .checklist-icon; .medium-yellow; }
+
+// Code icon
+.file-icon-js:before  { .code-icon; .medium-yellow; }
+.file-icon-jsx:before  { .code-icon; .medium-green; }
+.file-icon-xml:before { .code-icon; .medium-blue;   }
+
+// Coffee icon
+.file-icon-coffee:before    { .coffee-icon; .medium-maroon; }
+.file-icon-litcoffee:before { .coffee-icon; .light-maroon;  }
+
+// Comment icon
+.file-icon-rb[data-name$="_spec.rb"]:before { .comment-icon; .medium-green; }
+
+// CSS3 icon
+.file-icon-less:before { .css3-icon; .dark-blue;    }
+.file-icon-sass:before { .css3-icon; .light-purple; }
+.file-icon-scss:before { .css3-icon; .dark-purple;  }
+.file-icon-css:before  { .css3-icon; .medium-blue;  }
+
+// Dashboard icon
+.file-icon-slim:before { .dashboard-icon; .medium-orange; }
+
+// Database icon
+.file-icon-json:before { .database-icon; .medium-yellow; }
+.file-icon-cson:before { .database-icon; .medium-maroon; }
+.file-icon-yml:before  { .database-icon; .light-red; }
+
+// HTML5 icon
+.file-icon-erb:before  { .html5-icon; .medium-red;    }
+.file-icon-php:before  { .html5-icon; .dark-blue;     }
+.file-icon-html:before { .html5-icon; .medium-orange; }
+.file-icon-haml:before { .html5-icon; .light-red;     }
+.file-icon-jade:before { .html5-icon; .medium-green;  }
+
+// Gear icon
+.file-icon-gitignore:before    { .gear-icon;                 }
+.file-icon-editorconfig:before { .gear-icon; .medium-orange; }
+.file-icon-npmignore:before    { .gear-icon; .medium-green;  }
+.file-icon-jshintrc:before     { .gear-icon; .medium-yellow; }
+.file-icon-module:before       { .gear-icon; .medium-blue;   }
+.file-icon-htaccess:before     { .gear-icon; .medium-red;    }
+
+// Github icon
+.icon-file-directory[data-name=".git"]:before { .git-icon; }
+
+// Package icon
+.icon-file-directory[data-name=".bundle"]:before { .package-icon; }
+
+// Python icon
+.file-icon-py:before { .python-icon; .dark-yellow; }
+
+// Ruby icon
+.file-icon-Gemfile:before { .ruby-icon;              }
+.file-icon-rb:before      { .ruby-icon; .medium-red; }
+
+// Secret icon
+.file-icon-secret:before { .secret-icon; }
+
+// Default icon: image
+.file-icon-png:before { .medium-orange; }
+.file-icon-gif:before { .medium-yellow; }
+.file-icon-jpg:before { .medium-green;  }
+
+// Default icon: book
+.icon-book[data-name="README.md"]:before { left: -1px; }
+.icon-book[data-name="Readme.md"]:before { left: -1px; }
+.icon-book[data-name="readme.md"]:before { left: -1px; }
+
+// No default icons
+.file-icon-md:before  { .medium-blue;   }
+.file-icon-txt:before { .medium-cyan;   }
+.file-icon-sh:before  { .medium-purple; }
