@@ -1,3 +1,20 @@
+## 2.7.0
+* The escape key will now close the script output pane
+* More tests, because this project definitely needs more tests
+* Support for MoonScript
+
+
+## 2.6.0
+* Added line based support
+* Updated a few BDD/TDD grammars with line based support
+* Improved selection support by correcting the line numbers
+* Travis CI and specs added
+
+## 2.5.0
+* Added LiveScript support
+* Keybindings for Linux and Windows!
+* Almost made shift-enter a keybinding for running code
+
 ## 2.4.0
 * Accept shift-enter as another keymap for run
 * Added Scheme support (guile as default)
