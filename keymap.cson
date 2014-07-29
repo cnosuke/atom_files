@@ -23,3 +23,6 @@
 
 '.editor':
   'cmd-alt-l': 'editor:auto-indent'
+
+'.editor':
+  'ctrl+alt+r': 'rspec:run'

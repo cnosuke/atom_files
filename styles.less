@@ -39,7 +39,7 @@ body, html {
   }
 
   .cursor-line {
-    background: rgba(200,200,200,0.1)
+    background: rgba(200,200,200,0.1);
   }
 }
 
@@ -53,5 +53,40 @@ body, html {
   .invisible-character {
     color: @hints-color;
     opacity: @hints-opacity;
+  }
+}
+
+.editor.is-focused .selection .region {
+  background-color: rgba(100, 100, 100, 1);
+  color: #fff !important;
+  text-shadow: none;
+}
+
+
+.fuzzy-finder {
+  width: 50%;
+
+  .list-group {
+    .two-lines {
+      font-size: 150%;
+
+      .primary-line {
+        color: #ccc !important;
+      }
+      .secondary-line {
+        color: #999 !important;
+      }
+
+      &.selected {
+        .primary-line {
+          color: #fff !important;
+        }
+        .secondary-line {
+          color: #0f0 !important;
+        }
+
+        background: #444;
+      }
+    }
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "regex-railroad-diagram",
   "main": "./lib/regex-railroad-diagram",
-  "version": "0.6.0",
+  "version": "0.6.2",
   "description": "Display railroad diagram of regex under cursor.",
   "repository": {
     "type": "git",
@@ -21,10 +21,10 @@
     "url": "https://github.com/klorenz/atom-regex-railroad-diagrams/issues"
   },
   "homepage": "https://github.com/klorenz/atom-regex-railroad-diagrams",
-  "_id": "regex-railroad-diagram@0.6.0",
+  "_id": "regex-railroad-diagram@0.6.2",
   "dist": {
-    "shasum": "a8f2d247165b3d81333d3b74a91af2dbc53920b2"
+    "shasum": "973ad57814457ffe092ebd0df5e9a1b5e0d95df9"
   },
-  "_resolved": "/var/folders/p5/t31rtb817gq6cvqg5sfgzq3w0000gp/T/d-11465-48428-all7ai/package.tgz",
-  "_from": "/var/folders/p5/t31rtb817gq6cvqg5sfgzq3w0000gp/T/d-11465-48428-all7ai/package.tgz"
+  "_resolved": "/var/folders/p5/t31rtb817gq6cvqg5sfgzq3w0000gp/T/d-114618-11652-i4pxkc/package.tgz",
+  "_from": "/var/folders/p5/t31rtb817gq6cvqg5sfgzq3w0000gp/T/d-114618-11652-i4pxkc/package.tgz"
 }

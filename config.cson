@@ -24,3 +24,7 @@
     '.svn'
     '.DS_Store'
   ]
+'rspec':
+  'command': 'bundle exec spring rspec'
+'recent-files':
+  'updated': false
