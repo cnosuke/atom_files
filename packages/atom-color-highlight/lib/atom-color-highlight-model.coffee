@@ -1,6 +1,7 @@
 _ = require 'underscore-plus'
 {Emitter, Subscriber} = require 'emissary'
 {OnigRegExp} = require 'oniguruma'
+{CompositeDisposable} = require 'event-kit'
 Color = require 'pigments'
 
 module.exports =
@@ -15,6 +16,7 @@ class AtomColorHighlightModel
 
   constructor: (@editor, @buffer) ->
     finder = atom.packages.getLoadedPackage('project-palette-finder')
+    @subscriptions = new CompositeDisposable
     if finder?
       module = require(finder.path)
       Color = module.constructor.Color
@@ -26,15 +28,15 @@ class AtomColorHighlightModel
     return if @frameRequested
 
     @frameRequested = true
-    webkitRequestAnimationFrame =>
+    requestAnimationFrame =>
       @frameRequested = false
       @updateMarkers()
 
   subscribeToBuffer: ->
-    @subscribe @buffer, 'contents-modified', @update
+    @subscriptions.add @buffer.onDidStopChanging @update
 
   unsubscribeFromBuffer: ->
-    @unsubscribe @buffer, 'contents-modified', @update
+    @subscriptions.dispose()
     @buffer = null
 
   init: ->

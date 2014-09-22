@@ -1,6 +1,7 @@
 _ = require 'underscore-plus'
 {View, $} = require 'atom'
 {Subscriber} = require 'emissary'
+{CompositeDisposable} = require 'event-kit'
 
 MarkerView = require './marker-view'
 DotMarkerView = require './dot-marker-view'
@@ -16,6 +17,9 @@ class AtomColorHighlightView extends View
     super
     @selections = []
     @markerViews = {}
+
+    @editorSubscriptions = new CompositeDisposable
+    @selectionSubscriptions = new CompositeDisposable
 
     @observeConfig()
     @setEditorView(editorView)
@@ -51,40 +55,32 @@ class AtomColorHighlightView extends View
 
   subscribeToEditor: ->
     return unless @editor?
-    @subscribe @editor, 'selection-added', => setImmediate => @updateSelections
+    @editorSubscriptions.add @editor.onDidAddSelection => setImmediate => @updateSelections
 
   unsubscribeFromEditor: ->
     return unless @editor?
-    @unsubscribe @editor, 'selection-added'
+    @editorSubscriptions.dispose()
 
   updateSelections: =>
     selections = @editor.getSelections()
-    selectionsToBeRemoved = @selections.concat()
+    @unsubscribeFromSelections()
 
-    for selection in selections
-      if selection in @selections
-        _.remove selectionsToBeRemoved, selection
-      else
-        @subscribeToSelection selection
+    @subscribeToSelection selection for selection in selections
 
-    for selection in selectionsToBeRemoved
-      @unsubscribeFromSelection selection
     @selections = selections
     @selectionChanged()
 
   subscribeToSelection: (selection) ->
-    @subscribe selection, 'screen-range-changed', @selectionChanged
-    @subscribe selection, 'destroyed', @updateSelections
+    @selectionSubscriptions.add selection.onDidChangeRange @selectionChanged
+    @selectionSubscriptions.add selection.onDidDestroy @updateSelections
 
-  unsubscribeFromSelection: (selection) ->
-    @unsubscribe selection, 'screen-range-changed', @selectionChanged
-    @unsubscribe selection, 'destroyed'
+  unsubscribeFromSelections:->
+    @selectionSubscriptions.dispose()
 
   # Tear down any state and detach
   destroy: ->
-    @unsubscribe @editor, 'selection-added'
-    for selection in @editor.getSelections()
-      @unsubscribeFromSelection(selection)
+    @editorSubscriptions.dispose()
+    @unsubscribeFromSelections()
     @destroyAllViews()
     @detach()
 
@@ -93,6 +89,8 @@ class AtomColorHighlightView extends View
       return view if view.marker.bufferMarker.containsPoint(position)
 
   selectionChanged: =>
+    return if @markers?.length is 0
+
     viewsToBeDisplayed = _.clone(@markerViews)
 
     for id,view of @markerViews
@@ -114,13 +112,18 @@ class AtomColorHighlightView extends View
   markersUpdated: (@markers) =>
     markerViewsToRemoveById = _.clone(@markerViews)
     markersByRows = {}
+    useDots = atom.config.get('atom-color-highlight.markersAtEndOfLine')
+    sortedMarkers = []
 
     for marker in @markers
       if @markerViews[marker.id]?
         delete markerViewsToRemoveById[marker.id]
+        if useDots
+          sortedMarkers.push @markerViews[marker.id]
       else
-        if atom.config.get('atom-color-highlight.markersAtEndOfLine')
+        if useDots
           markerView = new DotMarkerView({@editorView, marker, markersByRows})
+          sortedMarkers.push markerView
         else
           markerView = new MarkerView({@editorView, marker})
         @append(markerView.element)
@@ -129,6 +132,14 @@ class AtomColorHighlightView extends View
     for id, markerView of markerViewsToRemoveById
       delete @markerViews[id]
       markerView.remove()
+
+    if useDots
+      markersByRows = {}
+      for markerView in sortedMarkers
+        markerView.markersByRows = markersByRows
+        markerView.updateNeeded = true
+        markerView.clearPosition = true
+        markerView.updateDisplay()
 
   rebuildMarkers: =>
     return unless @markers

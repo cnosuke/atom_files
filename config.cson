@@ -10,10 +10,8 @@
   'showInvisibles': true
   'invisibles':
     'cr': '↩'
-    'eol': ''
     'space': '·'
     'tab': '⇥'
-  'fontSize': 14
 'core':
   'themes': [
     'atom-dark-ui'
@@ -23,6 +21,9 @@
     '.git'
     '.svn'
     '.DS_Store'
+  ]
+  'disabledPackages': [
+    'symbols-view'
   ]
 'rspec':
   'command': 'bundle exec spring rspec'

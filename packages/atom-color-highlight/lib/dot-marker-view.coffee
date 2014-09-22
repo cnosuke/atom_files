@@ -15,6 +15,7 @@ class DotMarkerView
     @updateNeeded = @marker.isValid()
     @oldScreenRange = @getScreenRange()
     @buffer = @editor.buffer
+    @clearPosition = true
 
     @subscribeToMarker()
     @updateDisplay()
@@ -28,10 +29,14 @@ class DotMarkerView
 
     @hide() if @hidden()
 
-    size = atom.config.get('atom-color-highlight.dotMarkersSize')
-    spacing = atom.config.get('atom-color-highlight.dotMarkersSpacing')
+    size = @getSize()
+    spacing = @getSpacing()
     @markersByRows[range.start.row] ?= 0
-    @position ?= @markersByRows[range.start.row]
+
+    if @clearPosition
+      @position = @markersByRows[range.start.row]
+      @clearPosition = false
+
     @markersByRows[range.start.row]++
 
     color = @getColor()
@@ -45,3 +50,6 @@ class DotMarkerView
     @element.style.left = (left + spacing + @position * (size + spacing)) + 'px'
     @element.style.backgroundColor = color
     @element.style.color = colorText
+
+  getSize: -> atom.config.get('atom-color-highlight.dotMarkersSize')
+  getSpacing: -> atom.config.get('atom-color-highlight.dotMarkersSpacing')

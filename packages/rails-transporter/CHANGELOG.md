@@ -1,3 +1,7 @@
+## 0.5.0 - Updates open-view-finder
+* Support `open-view-finder` to open mailer view files
+* Fix `open-asset` couldn't .erb file
+
 ## 0.4.0 - Adds open-layout command
 `open-layout` command can open layout file from controllers in following situations:
 * When cursor's current buffer row contains layout method, it opens specified layout

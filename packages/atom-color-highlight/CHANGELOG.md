@@ -1,3 +1,47 @@
+<a name="v1.0.4"></a>
+# v1.0.4 (2014-09-18)
+
+## :bug: Bug Fixes
+
+- Fix aliased color at n+2 not detected ([6f446e79](https://github.com/abe33/atom-color-highlight/commit/6f446e790ec083b87f4dde38035844ea0755304b))
+
+## :racehorse: Performances
+
+- Prevent works when no markers was found ([352c9cf1](https://github.com/abe33/atom-color-highlight/commit/352c9cf1fe248e9f69e1c8dd5def404094f72952))
+
+<a name="v1.0.3"></a>
+# v1.0.3 (2014-09-16)
+
+## :bug: Bug Fixes
+
+- Fix deprecated method calls on markers ([040475c8](https://github.com/abe33/atom-color-highlight/commit/040475c8019d5f19bacc236d5710224098581328))
+- Fix deprecated method calls ([bfcc4a90](https://github.com/abe33/atom-color-highlight/commit/bfcc4a902e5d0c68a0a6aa74d17b7a308b817210))
+
+<a name="v1.0.1"></a>
+# v1.0.1 (2014-08-04)
+
+## :bug: Bug Fixes
+
+- Fix warning due to deprecated prefixed function ([49bd8c6e](https://github.com/abe33/atom-color-highlight/commit/49bd8c6e8f3e6fcb48ba4876d9c2a1b89a810e9c))
+
+<a name="v1.0.0"></a>
+# v1.0.0 (2014-08-04)
+
+## :sparkles: Features
+
+- Add support of pigments 2.0.0 and Atom 0.120.0 ([78d0db5f](https://github.com/abe33/atom-color-highlight/commit/78d0db5fc3665b26933340f89502b739de52b873))
+
+## :bug: Bug Fixes
+
+- Fix invalid layout when adding removing a color in a line ([a185707c](https://github.com/abe33/atom-color-highlight/commit/a185707c64a1c3a997785067a2fb6ea574c82ddb))
+
+<a name="v0.19.4"></a>
+# v0.19.4 (2014-07-30)
+
+## :bug: Bug Fixes
+
+- Fix missing match when a color is followed by a class selector ([8c482feb](https://github.com/abe33/atom-color-highlight/commit/8c482feb568db30829bffca96ace40bf7be0b386))
+
 <a name="v0.19.3"></a>
 # v0.19.3 (2014-07-21)
 
