@@ -20,6 +20,8 @@
 'body':
   'ctrl-;': 'pane:show-previous-item'
   'ctrl-\'': 'pane:show-next-item'
+  'ctrl-j v': 'pane:split-down'
+  'ctrl-j h': 'pane:split-right'
 
 '.editor':
   'cmd-alt-l': 'editor:auto-indent'

@@ -9,10 +9,10 @@ RailsUtil = require './rails-util'
 module.exports =
 class ViewFinderView extends BaseFinderView
   _.extend this::, RailsUtil::
-  
+
   populate: ->
     @displayFiles.length = 0
-    currentFile = atom.workspace.getActiveEditor().getPath()
+    currentFile = atom.workspace.getActiveTextEditor().getPath()
     if @isController(currentFile)
       viewDir = currentFile.replace('controllers', 'views')
                            .replace(/_controller\.rb$/, '')
@@ -29,7 +29,8 @@ class ViewFinderView extends BaseFinderView
 
     return unless fs.existsSync viewDir
     for viewFile in fs.readdirSync(viewDir)
-      if fs.statSync("#{viewDir}/#{viewFile}").isFile()
-        @displayFiles.push "#{viewDir}/#{viewFile}"
-          
+      viewPath = path.join(viewDir, viewFile)
+      if fs.statSync(viewPath).isFile()
+        @displayFiles.push viewPath
+
     @setItems(@displayFiles)

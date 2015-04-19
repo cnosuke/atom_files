@@ -1,149 +1,276 @@
+UnicodeUtil = require "./unicode-util"
+CharacterRegexpUtil = require "./character-regexp-util"
 
 module.exports =
 class JapaneseWrapManager
+  @characterClasses = require "./character-classes"
+
   constructor: ->
-    # Surrogate
-    # High U+D800 - U+DBFF
-    # Low U+DC00 - U+DFFF
-    # D800 D840 D880 D8C0 D900 D940 D980 D9C0
-    # DA00 DA40 DA80 DAC0 DB00 DB40 DB80 DBC0
-    @highSurrogateChar = /[\uD800-\uDBFF]/
-    @highSurrogateHalfWidthChar = /[\uD800-\uD83F]/ # 1xxxx
-    @highSurrogateFullWdithChar = /[\uD840-\uDBFF]/ # 2xxxx - 10xxxx
-    @lowSurrogateChar = /[\uDC00-\uDFFF]/
+    @setupCharRegexp()
 
-    # Not incude '　'(U+3000)
-    @whitespaceChar = /[\t\n\v\f\r \u00a0\u2000-\u200b\u2028\u2029]/
-    # TODO
-    @unbreakbleChar = /[—…‥]/
-    @europeanNumeralChar = /[\d.,]/
+    configNameList = [
+      #'全角句読点ぶら下げ',
+      #'半角句読点ぶら下げ',
+      #'全角ピリオド/コンマぶら下げ',
+      #'半角ピリオド/コンマぶら下げ',
+      'characterWidth.greekAndCoptic',
+      'characterWidth.cyrillic',
+      # 'ASCII文字を禁則処理に含める',
+      'lineBreakingRule.halfwidthKatakana',
+      'lineBreakingRule.ideographicSpaceAsWihteSpace',
+    ]
+    for name in configNameList
+      configName = 'japanese-wrap.' + name
+      atom.config.observe configName, (newValue) =>
+        @setupCharRegexp()
+    @lineBreakingRuleJapanese =
+        atom.config.get('japanese-wrap.lineBreakingRule.japanese')
+    atom.config.observe 'japanese-wrap.lineBreakingRule.japanese',
+        (newValue) =>
+          @lineBreakingRuleJapanese = newValue
 
-    # W3C - Requirements for Japanese Text Layout
-    # Appendix A Character Classes
-    # http://www.w3.org/TR/jlreq/#character_classes
+  setupCharRegexp: ->
+    # debug
+    #console.log("run setupCharRegexp")
+    if atom.config.get('japanese-wrap.lineBreakingRule.ideographicSpaceAsWihteSpace')
+      @whitespaceCharRegexp = /\s/
+    else
+      # Not incude '　'(U+3000)
+      @whitespaceCharRegexp = /[\t\n\v\f\r \u00a0\u2000-\u200b\u2028\u2029]/
 
-    # A.1 Opening brackets (cl-01)
-    # Basic Latin -> Halfwidth and Fullwidth Forms
-    @openingBracketChar = /[‘“（〔［｛〈《「『【｟〘〖«〝]/
-    # A.2 Closing brackets (cl-02)
-    # Basic Latin -> Halfwidth and Fullwidth Forms
-    @closingBracketChar = /[’”）〕］｝〉》」』】｠〙〗»〟]/
-    # A.3 Hyphens (cl-03)
-    # U+2010, U+301C, U+30A0, U+2013
-    @hyphenChar = /[‐〜゠–]/
-    # A.4 Dividing punctuation marks (cl-04)
-    # Basic Latin -> Halfwidth and Fullwidth Forms
-    @dividingPunctuationChar = /[！？‼⁇⁈⁉]/
-    # A.5 Middle dots (cl-05)
-    # Basic Latin -> Halfwidth and Fullwidth Forms
-    @middleDotChar = /[・：；]/
-    # A.6 Full stops (cl-06)
-    @fullStopChar = /[。．]/
-    # A.7 Commas (cl-07)
-    @commaChar = /[、，]/
-    # A.8 Inseparable characters (cl-08)
-    # TODO: wrong rule '〳〴〵'
-    @inseparableChar = /[—…‥〳〴〵]/
-    # A.9 Iteration marks (cl-09)
-    @iterationMarkChar = /[ヽヾゝゞ々〻]/
-    # A.10 Prolonged sound mark (cl-10)
-    @prolongedSoundMarkChar = /ー/
-    # A.11 Small kana (cl-11)
-    # Not include 'ㇷ゚'(U+31F7, U+309A)
-    @smallKanaChar = /[ぁぃぅぇぉァィゥェォっゃゅょゎゕゖッャュョヮヵヶㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ]/
-    # A.12 Prefixed abbreviations (cl-12)
-    @prefAbbrChar = /[¥$£#€№]/
-    # A.13 Postfixed abbreviations (cl-13)
-    @postAbbrChar = /[°′″℃¢%‰㏋ℓ㌃㌍㌔㌘㌢㌣㌦㌧㌫㌶㌻㍉㍊㍍㍑㍗㎎㎏㎜㎝㎞㎡㏄]/
-    # A.14 Full-width ideographic space (cl-14)
-    @ideographicSpaceChar = /\u3000/ # '　'(U+3000)
-    # A.27 Western characters (cl-27)
-    @westernChar = /[\u0021-\u007E\u00A0-\u1FFF]/
+    #ascii = atom.config.get('japanese-wrap.ASCII文字を禁則処理に含める')
+    hankaku = atom.config.get('japanese-wrap.lineBreakingRule.halfwidthKatakana')
+    greek_size = atom.config.get('japanese-wrap.characterWidth.greekAndCoptic')
+    cyrillic_size = atom.config.get('japanese-wrap.characterWidth.cyrillic')
+
+    # word charater
+    @wordCharRegexp = CharacterRegexpUtil.string2regexp(
+        JapaneseWrapManager.characterClasses["Western characters"])
 
     # Characters Not Starting a Line and Low Surrogate
-    @notStartingChar = new RegExp(
-        @closingBracketChar.source + "|"  +
-        @hyphenChar.source + "|" +
-        @dividingPunctuationChar.source + "|" +
-        @middleDotChar.source + "|" +
-        @fullStopChar.source + "|" +
-        @commaChar.source + "|" +
-        @iterationMarkChar.source + "|" +
-        @prolongedSoundMarkChar.source + "|" +
-        @smallKanaChar.source + "|" +
-        @lowSurrogateChar.source
-    )
+    # TODO: add 濁音/半濁音
+    # TODO: add combine
+    notStartingCharList = [
+      JapaneseWrapManager.characterClasses["Closing brackets"],
+      JapaneseWrapManager.characterClasses["Hyphens"],
+      JapaneseWrapManager.characterClasses["Dividing punctuation marks"],
+      JapaneseWrapManager.characterClasses["Middle dots"],
+      JapaneseWrapManager.characterClasses["Full stops"],
+      JapaneseWrapManager.characterClasses["Commas"],
+      JapaneseWrapManager.characterClasses["Iteration marks"],
+      JapaneseWrapManager.characterClasses["Prolonged sound mark"],
+      JapaneseWrapManager.characterClasses["Small kana"],
+      CharacterRegexpUtil.range2string(UnicodeUtil.lowSurrogateRange),
+    ]
+    # TODO
+    #if ascii
+    #  notStartingCharList.push(
+    #    CharacterRegexpUtil.escapeAscii(
+    #      JapaneseWrapManager.characterClasses["Closing brackets ASCII"]),
+    #    CharacterRegexpUtil.escapeAscii(
+    #      JapaneseWrapManager.characterClasses["Dividing punctuation marks ASCII"]),
+    #    CharacterRegexpUtil.escapeAscii(
+    #      JapaneseWrapManager.characterClasses["Full stops ASCII"]),
+    #    CharacterRegexpUtil.escapeAscii(
+    #      JapaneseWrapManager.characterClasses["Commas ASCII"]),
+    #  )
+    if hankaku
+      notStartingCharList.push(
+        JapaneseWrapManager.characterClasses["Closing brackets HANKAKU"],
+        JapaneseWrapManager.characterClasses["Middle dots HANKAKU"],
+        JapaneseWrapManager.characterClasses["Full stops HANKAKU"],
+        JapaneseWrapManager.characterClasses["Commas HANKAKU"],
+        JapaneseWrapManager.characterClasses["Prolonged sound mark HANKAKU"],
+        JapaneseWrapManager.characterClasses["Small kana HANKAKU"],
+      )
+    @notStartingCharRexgep =
+        CharacterRegexpUtil.string2regexp(notStartingCharList...)
+
     # Characters Not Ending a Line and High Surrogate
-    @notEndingChar = new RegExp(
-        @openingBracketChar.source + "|" +
-        @highSurrogateChar.source
-    )
+    notEndingCharList = [
+      JapaneseWrapManager.characterClasses["Opening brackets"],
+      CharacterRegexpUtil.range2string(UnicodeUtil.highSurrogateRange),
+    ]
+    # TODO
+    #if ascii
+    #  notEndingCharList.push(
+    #    CharacterRegexpUtil.escapeAscii(
+    #      JapaneseWrapManager.characterClasses["Opening brackets ASCII"]),
+    #  )
+    if hankaku
+      notEndingCharList.push(
+        JapaneseWrapManager.characterClasses["Opening brackets HANKAKU"],
+      )
+    @notEndingCharRegexp =
+        CharacterRegexpUtil.string2regexp(notEndingCharList...)
 
     # Character Width
-    @zeroWidthChar = /[\u200B-\u200F\uDC00-\uDFFF\uFEFF]/
-    @halfWidthChar = /[\u0000-\u036F\u2000-\u2000A\u2122\uD800-\uD83F\uFF61-\uFFDC]/
+    @zeroWidthCharRegexp = CharacterRegexpUtil.string2regexp(
+        "\\u200B-\\u200F",
+        CharacterRegexpUtil.range2string(UnicodeUtil.lowSurrogateRange),
+        "\\uFEFF",
+        CharacterRegexpUtil.range2string(
+            UnicodeUtil.getRangeListByName("Combining")...),
+        "゙゚", # U+3099, U+309A
+    )
+
+    halfWidthCharList = [
+      CharacterRegexpUtil.range2string(
+          UnicodeUtil.getRangeListByName("Latin")...),
+      "\\u2000-\\u200A",
+      "\\u2122",
+      "\\uFF61-\\uFFDC",
+    ]
+    if greek_size == 1
+      halfWidthCharList.push(CharacterRegexpUtil.range2string(
+          UnicodeUtil.getRangeListByName("Greek")...))
+    if cyrillic_size == 1
+      halfWidthCharList.push(CharacterRegexpUtil.range2string(
+          UnicodeUtil.getRangeListByName("Cyrillic")...))
+    @halfWidthCharRegexp =
+        CharacterRegexpUtil.string2regexp(halfWidthCharList...)
+    # /[\u0000-\u036F\u2000-\u2000A\u2122\uD800-\uD83F]/
     # @fullWidthChar = /[^\u0000-\u036F\uFF61-\uFFDC]/
 
-  # overwrite Display#findWrapColumn()
+    # Line Adjustment by Hanging Punctuation
+    # TODO: 0.2.1...
+    #@hangingPunctuationCharRegexp = CharacterRegexpUtil.string2regexp(
+    #    JapaneseWrapManager.characterClasses["Full stops"],
+    #    JapaneseWrapManager.characterClasses["Commas"])
+
+  # overwrite findWrapColumn()
   overwriteFindWrapColumn: (displayBuffer) ->
-    unless displayBuffer.japaneseWrapManager?
-      displayBuffer.japaneseWrapManager = @
+    # displayBuffer has one line at least, so line:0 should exist.
+    firstTokenizedLine = displayBuffer.tokenizedBuffer.tokenizedLineForRow(0)
+    unless firstTokenizedLine?
+      console.log("displayBuffer has no line.")
+      return
 
-    unless displayBuffer.originalFindWrapColumn?
-      displayBuffer.originalFindWrapColumn = displayBuffer.findWrapColumn
+    # tokenizedLineClass = firstTokenizedLine.constructor::
+    tokenizedLineClass = firstTokenizedLine.__proto__
 
-    if displayBuffer.softWrap? || displayBuffer.softWrapped?
-      displayBuffer.softWrapped = true
-    else
-      displayBuffer.softWrapped = false
+    unless tokenizedLineClass.japaneseWrapManager?
+      tokenizedLineClass.japaneseWrapManager = @
+      tokenizedLineClass.originalFindWrapColumn =
+          tokenizedLineClass.findWrapColumn
+      tokenizedLineClass.findWrapColumn = (maxColumn) ->
+        # If all characters are full width, the width is twice the length.
+        return unless (@text.length * 2) > maxColumn
+        return @japaneseWrapManager.findJapaneseWrapColumn(@text, maxColumn)
 
-    displayBuffer.findWrapColumn = (line, softWrapColumn=@getSoftWrapColumn()) ->
-      return unless @isSoftWrapped()
-      return @japaneseWrapManager.findJapaneseWrapColumn(line, softWrapColumn)
-
-  # restore Display#findWrapColumn()
+  # restore findWrapColumn()
   restoreFindWrapColumn: (displayBuffer) ->
-    if displayBuffer.originalFindWrapColumn?
-      displayBuffer.findWrapColumn = displayBuffer.originalFindWrapColumn
-      displayBuffer.originalFindWrapColumn = undefined
+    # displayBuffer has one line at least, so line:0 should exist.
+    firstTokenizedLine = displayBuffer.tokenizedBuffer.tokenizedLineForRow(0)
+    unless firstTokenizedLine?
+      console.log("displayBuffer has no line.")
+      return
 
-    if displayBuffer.japaneseWrapManager?
-      displayBuffer.japaneseWrapManager = undefined
+    # tokenizedLineClass = firstTokenizedLine.constructor::
+    tokenizedLineClass = firstTokenizedLine.__proto__
+
+    if tokenizedLineClass.japaneseWrapManager?
+      tokenizedLineClass.findWrapColumn =
+          tokenizedLineClass.originalFindWrapColumn
+      tokenizedLineClass.originalFindWrapColumn = undefined
+      tokenizedLineClass.japaneseWrapManager = undefined
 
   # Japanese Wrap Column
-  findJapaneseWrapColumn: (line, sotfWrapColumn) ->
-    # If all characters are full width, the width is twice the length.
-    return unless (line.length * 2) > sotfWrapColumn
+  findJapaneseWrapColumn: (line, softWrapColumn) ->
     size = 0
     for wrapColumn in [0...line.length]
-      if @zeroWidthChar.test(line[wrapColumn])
+      if @zeroWidthCharRegexp.test(line[wrapColumn])
         continue
-      else if @halfWidthChar.test(line[wrapColumn])
+      else if @halfWidthCharRegexp.test(line[wrapColumn])
         size = size + 1
       else
         size = size + 2
 
-      if size > sotfWrapColumn
-        if @notEndingChar.test(line[wrapColumn - 1])
-          # search backward for the not ending character
-          for column in [(wrapColumn - 1)...0]
-            return column unless @notEndingChar.test(line[column - 1])
-          return wrapColumn
-        else if @whitespaceChar.test(line[wrapColumn])
-          # search forward for the start of a word past the boundary
-          for column in [wrapColumn...line.length]
-            return column unless @whitespaceChar.test(line[column])
-          return line.length
-        else if @westernChar.test(line[wrapColumn])
-          # search backward for the start of the word on the boundary
-          for column in [wrapColumn..0]
-            return column + 1 unless @westernChar.test(line[column])
-          return wrapColumn
-        else if @notStartingChar.test(line[wrapColumn])
-          # Character Not Starting a Line
-          for column in [wrapColumn...0]
-            return column unless @notStartingChar.test(line[column])
-          return wrapColumn
+      if size > softWrapColumn
+        if @lineBreakingRuleJapanese
+          column = @searchBackwardNotEndingColumn(line, wrapColumn)
+          if column?
+            return column
+
+          column = @searchForwardWhitespaceCutableColumn(line, wrapColumn)
+          if not column?
+            cutable = false
+          else if column == wrapColumn
+            cutable = true
+          else
+            return column
+
+          return @searchBackwardCutableColumn(
+              line,
+              wrapColumn,
+              cutable,
+              @wordCharRegexp.test(line[wrapColumn]))
         else
-          return wrapColumn
+          if @wordCharRegexp.test(line[wrapColumn])
+            # search backward for the start of the word on the boundary
+            for column in [wrapColumn..0]
+              return column + 1 unless @wordCharRegexp.test(line[column])
+            return wrapColumn
+          else
+            # search forward for the start of a word past the boundary
+            for column in [wrapColumn..line.length]
+              return column unless @whitespaceCharRegexp.test(line[column])
+            return line.length
     return
+
+  searchBackwardNotEndingColumn: (line, wrapColumn) ->
+    foundNotEndingColumn = null
+    for column in [(wrapColumn - 1)..0]
+      if @whitespaceCharRegexp.test(line[column])
+        continue
+      else if @notEndingCharRegexp.test(line[column])
+        foundNotEndingColumn = column
+      else
+        return foundNotEndingColumn
+    return
+
+  searchForwardWhitespaceCutableColumn: (line, wrapColumn) ->
+    for column in [wrapColumn...line.length]
+      unless @whitespaceCharRegexp.test(line[column])
+        if @notStartingCharRexgep.test(line[column])
+          return null
+        else
+          return column
+    return line.length
+
+  searchBackwardCutableColumn: (line, wrapColumn, cutable, preWord) ->
+    for column in [(wrapColumn - 1)..0]
+      if @whitespaceCharRegexp.test(line[column])
+        if cutable or preWord
+          preColumn = @searchBackwardNotEndingColumn(line, column)
+          if preColumn?
+            preColumn
+          else
+            return column + 1
+      else if @notEndingCharRegexp.test(line[column])
+        cutable = true
+        if @wordCharRegexp.test(line[column])
+          preWord = true
+        else
+          preWord = false
+      else if @notStartingCharRexgep.test(line[column])
+        if cutable or preWord
+          return column + 1
+        else
+          cutable = false
+          if @wordCharRegexp.test(line[column])
+            preWord = true
+          else
+            preWord = false
+      else if @wordCharRegexp.test(line[column])
+        if (! preWord) and cutable
+          return column + 1
+        else
+          preWord = true
+      else
+        if cutable or preWord
+          return column + 1
+        else
+          cutable = true
+          preWord = false
+    return wrapColumn

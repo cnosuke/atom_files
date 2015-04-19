@@ -1,6 +1,7 @@
 path = require 'path'
 fs = require 'fs'
-{$$, SelectListView} = require 'atom'
+{$$, SelectListView} = require 'atom-space-pen-views'
+
 
 module.exports =
 class BaseFinderView extends SelectListView
@@ -10,18 +11,19 @@ class BaseFinderView extends SelectListView
     super
     @addClass('overlay from-top')
         
-    @subscribe this, 'pane:split-left', =>
-      @splitOpenPath (pane, session) -> pane.splitLeft(session)
-    @subscribe this, 'pane:split-right', =>
-      @splitOpenPath (pane, session) -> pane.splitRight(session)
-    @subscribe this, 'pane:split-down', =>
-      @splitOpenPath (pane, session) -> pane.splitDown(session)
-    @subscribe this, 'pane:split-up', =>
-      @splitOpenPath (pane, session) -> pane.splitUp(session)
+    atom.commands.add @element,
+      'pane:split-left': =>
+        @splitOpenPath (pane, item) -> pane.splitLeft(items: [item])
+      'pane:split-right': =>
+        @splitOpenPath (pane, item) -> pane.splitRight(items: [item])
+      'pane:split-down': =>
+        @splitOpenPath (pane, item) -> pane.splitDown(items: [item])
+      'pane:split-up': =>
+        @splitOpenPath (pane, item) -> pane.splitUp(items: [item])
     
   destroy: ->
     @cancel()
-    @remove()
+    @panel?.destroy()
     
   viewForItem: (item) ->
     $$ ->
@@ -30,26 +32,33 @@ class BaseFinderView extends SelectListView
         @div atom.project.relativize(item), class: 'secondary-line path no-icon'
   
   confirmed: (item) ->
-    atom.workspaceView.open item
+    atom.workspace.open item
     
   toggle: ->
-    if @hasParent()
+    if @panel?.isVisible()
       @cancel()
     else
       @populate()
-      @attach() if @displayFiles?.length > 0
+      @show() if @displayFiles?.length > 0
       
-  attach: ->
+  show: ->
     @storeFocusedElement()
-    atom.workspaceView.append(this)
+    @panel ?= atom.workspace.addModalPanel(item: this)
+    @panel.show()
     @focusFilterEditor()
 
   splitOpenPath: (fn) ->
     filePath = @getSelectedItem() ? {}
     return unless filePath
 
-    if pane = atom.workspaceView.getActivePane()
+    if pane = atom.workspace.getActivePane()
       atom.project.open(filePath).done (editor) =>
         fn(pane, editor)
     else
-      atom.workspaceView.open filePath
+      atom.workspace.open filePath
+
+  hide: ->
+    @panel?.hide()
+
+  cancelled: ->
+    @hide()

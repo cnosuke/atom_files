@@ -1,7 +1,7 @@
 {
   "name": "rspec",
   "main": "./lib/rspec",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "private": true,
   "description": "Atom RSpec runner package",
   "activationEvents": [
@@ -25,10 +25,24 @@
     "url": "https://github.com/fcoury/atom-rspec/issues"
   },
   "homepage": "https://github.com/fcoury/atom-rspec",
-  "_id": "rspec@0.1.7",
+  "_id": "rspec@0.1.9",
   "dist": {
-    "shasum": "0f4b3d7b98c776875cbf9fa66141557e02cb1c34"
+    "shasum": "9d4115ceda69b34519e3e289c9ca9b4ca393d1fc"
   },
-  "_resolved": "/var/folders/p5/t31rtb817gq6cvqg5sfgzq3w0000gp/T/d-114620-65809-19pe42z/package.tgz",
-  "_from": "/var/folders/p5/t31rtb817gq6cvqg5sfgzq3w0000gp/T/d-114620-65809-19pe42z/package.tgz"
+  "_from": "/Users/shinnosuke-takeda/.atom/.node-gyp/.atom/.apm/rspec/0.1.9/package.tgz",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [],
+    "extensions": {
+      ".coffee": [
+        "lib/rspec-view.coffee",
+        "lib/rspec.coffee",
+        "lib/text-formatter.coffee"
+      ],
+      ".json": [
+        "package.json"
+      ]
+    },
+    "folders": []
+  }
 }

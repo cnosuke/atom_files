@@ -1,5 +1,5 @@
-{View, $$} = require 'atom'
 {Regex2RailRoadDiagram} = require './regex-to-railroad'
+{$$, View} = require "atom-space-pen-views"
 
 module.exports =
 class RegexRailroadDiagramView extends View
@@ -11,13 +11,28 @@ class RegexRailroadDiagramView extends View
 
     @isVisible    = false
     @currentRegex = null
+    @currentEditor = null
 
-    #atom.workspaceView.command "regex-railroad-diagram:toggle", => @toggle()
-    atom.workspaceView.on 'cursor:moved', @updateRailRoadDiagram
+    #@view.command "regex-railroad-diagram:toggle", => @toggle()
+    @view = atom.views.getView(atom.workspace).__spacePenView
+
+    atom.workspace.observeTextEditors (editor) =>
+      editor.onDidChangeCursorPosition (event) =>
+        @updateRailRoadDiagram()
+
+      editor.onDidDestroy =>
+        if @currentEditor is editor and @currentRegex
+          @hideRailRoadDiagram()
+
+
+#    @view.on 'cursor:moved', @updateRailRoadDiagram
+
 
   updateRailRoadDiagram: () =>
-    editor = atom.workspace.getActiveEditor()
+    editor = atom.workspace.getActiveTextEditor()
     return if not editor?
+
+    @currentEditor = editor
 
     flavour = "python"
 
@@ -107,13 +122,13 @@ class RegexRailroadDiagramView extends View
     false
 
   showRailRoadDiagram: (regex, flavour) ->
-    rr = atom.workspaceView.find '.regex-railroad-diagram'
+    rr = @view.find '.regex-railroad-diagram'
     if not rr.length
       # create current diff
       @hide()
 
       # append to "panes"
-      atom.workspaceView.getActivePaneView().parents('.panes').eq(0).after(@)
+      @view.getActivePaneView().parents('.panes').eq(0).after(@)
 
     @children().remove()
     Regex2RailRoadDiagram(regex, @.get(0), flavour: flavour)
@@ -135,7 +150,7 @@ class RegexRailroadDiagramView extends View
   toggle: ->
     #console.log "RegexRailroadDiagramView was toggled!"
 
-    statusBar = atom.workspaceView.find('.status-bar')
+    statusBar = @view.find('.status-bar')
 
     if statusBar.length > 0
       @insertBefore(statusBar)
@@ -143,7 +158,6 @@ class RegexRailroadDiagramView extends View
       atom.workspace.getActivePane().append(@)
 
     Diagram(
-
         Choice(0, Skip(), '-'),
         Choice(0, NonTerminal('name-start char'), NonTerminal('escape')),
         ZeroOrMore(

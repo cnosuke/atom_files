@@ -2,8 +2,6 @@
 Q = require 'q'
 path = require 'path'
 
-TAG_LINE = "line:"
-TAG_LINE_LENGTH = TAG_LINE.length
 fs = null
 
 module.exports =
@@ -11,45 +9,44 @@ class TagGenerator
   constructor: (@path, @scopeName, @cmdArgs) ->
 
   parseTagLine: (line) ->
-    sections = line.split(/\t+/)
-    if sections.length > 3
-      tag = {
-        name: sections.shift()
-        file: sections.shift()
-      }
+    matches = line.match(/\t\/\^(.*)\$\/;"/)
+    if not matches
+      matches = line.match(/\t\/\^(.*)\/;"/)
+    return unless matches
 
-      i = sections.length - 1
+    pattern = matches[1]
+    patternStr = matches[0]
 
-      while i >= 0
-        row = sections[i]
-        if row.indexOf(TAG_LINE) == 0
-          row = row.substr(TAG_LINE_LENGTH) - 1
-          break
-        else
-          row = -1
-        --i
+    idx = line.indexOf(patternStr)
 
-      pattern = sections.join("\t")
+    start = line.substr(0, idx)
+    end = line.substr(idx + patternStr.length)
 
-      #match /^ and trailing $/;
-      tag.pattern = pattern.match(/^\/\^(.*)(\$\/;")/)?[1]
-      if not tag.pattern
-        tag.pattern = pattern.match(/^\/\^(.*)(\/;")/)?[1]
+    row = 0
+    row = end.match(/line:(\d+)/)?[1]
+    --row
 
-      if tag.pattern
-        tag.position = new Point(row, tag.pattern.indexOf(tag.name))
-      else
-        return null
-      return tag
-    else
-      return null
+    sections = start.split(/\t+/)
+    file = sections.pop()
+    name = sections.join("\t")
+    return unless name
+
+    file: file
+    position: new Point(row, pattern.indexOf(name))
+    pattern: pattern
+    name: name
+
 
   getLanguage: ->
     return 'Cson' if path.extname(@path) in ['.cson', '.gyp']
 
     switch @scopeName
-      when 'source.c'        then 'C'
+      # For backwards compatibility
       when 'source.c++'      then 'C++'
+      when 'source.objc++'   then 'C++'
+
+      when 'source.c'        then 'C'
+      when 'source.cpp'      then 'C++'
       when 'source.clojure'  then 'Lisp'
       when 'source.coffee'   then 'CoffeeScript'
       when 'source.css'      then 'Css'
@@ -62,7 +59,7 @@ class TagGenerator
       when 'source.json'     then 'Json'
       when 'source.makefile' then 'Make'
       when 'source.objc'     then 'C'
-      when 'source.objc++'   then 'C++'
+      when 'source.objcpp'   then 'C++'
       when 'source.python'   then 'Python'
       when 'source.ruby'     then 'Ruby'
       when 'source.sass'     then 'Sass'
@@ -103,18 +100,15 @@ class TagGenerator
   generate: ->
     deferred = Q.defer()
     tags = []
-    command = path.resolve(__dirname, '..', 'vendor', "ctags-#{process.platform}")
+    command = atom.config.get("atom-ctags.cmd").trim()
+    if command == ""
+        command = path.resolve(__dirname, '..', 'vendor', "ctags-#{process.platform}")
     defaultCtagsFile = require.resolve('./.ctags')
 
     args = []
     args.push @cmdArgs... if @cmdArgs
 
-    args.push("--options=#{defaultCtagsFile}", '--fields=+KSn')
-
-    if atom.config.get('atom-ctags.useEditorGrammarAsCtagsLanguage')
-      if language = @getLanguage()
-        args.push("--language-force=#{language}")
-
+    args.push("--options=#{defaultCtagsFile}", '--fields=+KSn', '--excmd=p')
     args.push('-R', '-f', '-', @path)
 
     stdout = (lines) =>
@@ -131,9 +125,11 @@ class TagGenerator
         if tag
           tags.push(tag)
         else
+          line = JSON.stringify(line)
           err.push "failed to parseTagLine: @#{line}@"
       error "please create a new issue:<br> command: @#{command} #{args.join(' ')}@" + err.join("<br>") if err.length > 0
     stderr = (lines) ->
+      lines = JSON.stringify(lines)
       console.warn  """command: @#{command} #{args.join(' ')}@
       err: @#{lines}@"""
 
@@ -147,7 +143,7 @@ class TagGenerator
     t = setTimeout =>
       childProcess.kill()
       error """
-      stoped: Build more than #{timeout} seconds, check if #{@path} contain too many file.<br>
+      Stopped: Build more than #{timeout/1000} seconds, check if #{@path} contain too many file.<br>
               Suggest that add CmdArgs at atom-ctags package setting, example:<br>
                   --exclude=some/path --exclude=some/other"""
     ,timeout

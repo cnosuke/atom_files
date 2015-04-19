@@ -1,76 +1,90 @@
-{Subscriber} = require 'emissary'
+os = require 'os'
+
+inputCfg = switch os.platform()
+  when 'win32'
+    key: 'altKey'
+    mouse: 1
+    middleMouse: true
+  when 'darwin'
+    key: 'altKey'
+    mouse: 1
+    middleMouse: true
+  when 'linux'
+    key: 'shiftKey'
+    mouse: 2
+    middleMouse: false
+  else
+    key: 'shiftKey'
+    mouse: 2
+    middleMouse: true
 
 module.exports =
 
   activate: (state) ->
-    @subscribe atom.workspaceView.eachEditorView (editorView) =>
-      @_handleLoad editorView
+    atom.workspace.observeTextEditors (editor) =>
+      @_handleLoad editor
 
   deactivate: ->
     @unsubscribe()
 
-  _handleLoad: (editorView) ->
-    editor     = editorView.getEditor()
-    scrollView = editorView.find('.scroll-view')
+  _handleLoad: (editor) ->
+    editorBuffer = editor.displayBuffer
+    editorElement = atom.views.getView editor
+    editorComponent = editorElement.component
 
-    altDown    = false
-    mouseStart = null
-    mouseEnd   = null
-    columnWidth  = null
+    mouseStart  = null
+    mouseEnd    = null
 
-    calculateMonoSpacedCharacterWidth = =>
-      if scrollView
-        # Create a span with an x in it and measure its width then remove it
-        span = document.createElement 'span'
-        span.appendChild document.createTextNode('x')
-        scrollView.append span
-        size = span.offsetWidth
-        span.remove()
-        return size
-      null
-
-    onKeyDown = (e) =>
-      if e.which is 18
-        altDown = true
-
-    onKeyUp = (e) =>
-      if e.which is 18
-        altDown = false
+    resetState = =>
+      mouseStart  = null
+      mouseEnd    = null
 
     onMouseDown = (e) =>
-      if altDown
-        columnWidth = calculateMonoSpacedCharacterWidth()
-        mouseStart  = overflowableScreenPositionFromMouseEvent(e)
+      if mouseStart
+        e.preventDefault()
+        return false
+
+      if (inputCfg.middleMouse and e.which is 2) or (e.which is inputCfg.mouse and e[inputCfg.key])
+        resetState()
+        mouseStart  = _screenPositionForMouseEvent(e)
         mouseEnd    = mouseStart
         e.preventDefault()
         return false
 
-    onMouseUp = (e) =>
-      mouseStart = null
-      mouseEnd = null
-
     onMouseMove = (e) =>
       if mouseStart
-        mouseEnd = overflowableScreenPositionFromMouseEvent(e)
-        selectBoxAroundCursors()
+        if (inputCfg.middleMouse and e.which is 2) or (e.which is inputCfg.mouse)
+          mouseEnd = _screenPositionForMouseEvent(e)
+          selectBoxAroundCursors()
+          e.preventDefault()
+          return false
+        if e.which == 0
+          resetState()
+
+    # Hijack all the mouse events when selecting
+    hikackMouseEvent = (e) =>
+      if mouseStart
         e.preventDefault()
         return false
 
-    onMouseleave = (e) =>
-      if altDown
-        e.preventDefault()
-        return false
+    onBlur = (e) =>
+      resetState()
 
-    # I had to create my own version of editorView.screenPositionFromMouseEvent
-    # The editorView one doesnt quite do what I need
-    overflowableScreenPositionFromMouseEvent = (e) =>
-      { pageX, pageY }  = e
-      offset            = editorView.scrollView.offset()
-      editorRelativeTop = pageY - offset.top + editorView.scrollTop()
-      row               = Math.floor editorRelativeTop / editorView.lineHeight
-      column            = Math.round (pageX - offset.left) / columnWidth
+    # I had to create my own version of editorComponent.screenPositionFromMouseEvent
+    # The editorBuffer one doesnt quite do what I need
+    _screenPositionForMouseEvent = (e) =>
+      pixelPosition    = editorComponent.pixelPositionForMouseEvent(e)
+      targetTop        = pixelPosition.top
+      targetLeft       = pixelPosition.left
+      defaultCharWidth = editorBuffer.defaultCharWidth
+      row              = Math.floor(targetTop / editorBuffer.getLineHeightInPixels())
+      targetLeft       = Infinity if row > editorBuffer.getLastRow()
+      row              = Math.min(row, editorBuffer.getLastRow())
+      row              = Math.max(0, row)
+      column           = Math.round (targetLeft) / defaultCharWidth
       return {row: row, column: column}
 
+    # Do the actual selecting
     selectBoxAroundCursors = =>
       if mouseStart and mouseEnd
         allRanges = []
@@ -89,15 +103,14 @@ module.exports =
         # Otherwise select all the 0 length ranges
         if rangesWithLength.length
           editor.setSelectedBufferRanges rangesWithLength
-        else
+        else if allRanges.length
           editor.setSelectedBufferRanges allRanges
 
     # Subscribe to the various things
-    @subscribe editorView, 'keydown',    onKeyDown
-    @subscribe editorView, 'keyup',      onKeyUp
-    @subscribe editorView, 'mousedown',  onMouseDown
-    @subscribe editorView, 'mouseup',    onMouseUp
-    @subscribe editorView, 'mousemove',  onMouseMove
-    @subscribe editorView, 'mouseleave', onMouseleave
-
-Subscriber.extend module.exports
+    editorElement.onmousedown   = onMouseDown
+    editorElement.onmousemove   = onMouseMove
+    editorElement.onmouseup     = hikackMouseEvent
+    editorElement.onmouseleave  = hikackMouseEvent
+    editorElement.onmouseenter  = hikackMouseEvent
+    editorElement.oncontextmenu = hikackMouseEvent
+    editorElement.onblur        = onBlur

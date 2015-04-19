@@ -14,34 +14,64 @@ describe "UnicodeUtil", ->
       expect(UnicodeUtil.getBlockName("𠮷")).toEqual("CJK Unified Ideographs Extension B")
       # " サロゲートペアが色つけがあるとおかしくなる様子、Atomのバグか？
 
-  describe "UnicodeUtil.range2string()", ->
-    it "range", ->
-      expect(UnicodeUtil.range2string([0x20..0x40])).toEqual("\\u0020-\\u0040")
-      expect(UnicodeUtil.range2string([0x300..0x600])).toEqual("\\u0300-\\u0600")
-      expect(UnicodeUtil.range2string([0x4000..0x8000])).toEqual("\\u4000-\\u8000")
-      expect(UnicodeUtil.range2string([0x12AB..0x34CD])).toEqual("\\u12AB-\\u34CD")
-  describe "UnicodeUtil.range2regexp()", ->
-    it "range", ->
-      expect(UnicodeUtil.range2regexp([0x20..0x40])).toEqual(/[\u0020-\u0040]/)
-      expect(UnicodeUtil.range2regexp([0x300..0x600])).toEqual(/[\u0300-\u0600]/)
-      expect(UnicodeUtil.range2regexp([0x4000..0x8000])).toEqual(/[\u4000-\u8000]/)
-      expect(UnicodeUtil.range2regexp([0x12AB..0x34CD])).toEqual(/[\u12AB-\u34CD]/)
-  describe "UnicodeUtil.string2regexp()", ->
-    it "single char", ->
-      expect(UnicodeUtil.string2regexp("a")).toEqual(/[a]/)
-      expect(UnicodeUtil.string2regexp("あ")).toEqual(/[あ]/)
-    it "word", ->
-      expect(UnicodeUtil.string2regexp("abc")).toEqual(/[abc]/)
-      expect(UnicodeUtil.string2regexp("あア亜")).toEqual(/[あア亜]/)
-    it "char range", ->
-      expect(UnicodeUtil.string2regexp("a-z")).toEqual(/[a-z]/)
-    it "unicode range", ->
-      expect(UnicodeUtil.string2regexp("\\u0020-\\u0040")).toEqual(/[\u0020-\u0040]/)
-      expect(UnicodeUtil.string2regexp("\\u0300-\\u0600")).toEqual(/[\u0300-\u0600]/)
-      expect(UnicodeUtil.string2regexp("\\u4000-\\u8000")).toEqual(/[\u4000-\u8000]/)
-    it "complex", ->
-      expect(UnicodeUtil.string2regexp("\\u0020-\\u0040abc")).toEqual(/[\u0020-\u0040abc]/)
-      expect(UnicodeUtil.string2regexp("\\u0020-\\u0040a-cあ")).toEqual(/[\u0020-\u0040a-cあ]/)
-    it "multi", ->
-      expect(UnicodeUtil.string2regexp("a", "b")).toEqual(/[ab]/)
-      expect(UnicodeUtil.string2regexp("\\u0020-\\u0040", "a-c", "あ")).toEqual(/[\u0020-\u0040a-cあ]/)
+  describe "UnicodeUtil.getRangeListByName()", ->
+    it "Latin", ->
+      rangeList = UnicodeUtil.getRangeListByName("Latin")
+      test_chars = ["a", "B", "À", "Đ", "ƒ"]
+      ok_count = 0
+      for r in rangeList
+        for c in test_chars
+          if c.charCodeAt() in r
+            ok_count += 1
+      expect(ok_count).toEqual(test_chars.length)
+
+    it "Greek", ->
+      rangeList = UnicodeUtil.getRangeListByName("Greek")
+      test_chars = ["α", "Β", "ὰ"]
+      ok_count = 0
+      for r in rangeList
+        for c in test_chars
+          if c.charCodeAt() in r
+            ok_count += 1
+      expect(ok_count).toEqual(test_chars.length)
+
+    it "CJK", ->
+      rangeList = UnicodeUtil.getRangeListByName("CJK")
+      test_chars = ["漢", "寝", "𠮷"]
+      ok_count = 0
+      for r in rangeList
+        for c in test_chars
+          charCode = c.charCodeAt()
+          if charCode in UnicodeUtil.highSurrogateRange
+            charCodeHigh = charCode
+            charCodeLow = c.charCodeAt(1)
+            if charCodeLow in UnicodeUtil.lowSurrogateRange
+              charCode = 0x10000 + (charCodeHigh - 0xD800) * 0x400 +
+              (charCodeLow - 0xDC00);
+          if charCode in r
+            ok_count += 1
+      expect(ok_count).toEqual(test_chars.length)
+
+  describe "UnicodeUtil.unicodeCharCodeAt()", ->
+    it "nonesurrogate", ->
+      text = "aB漢"
+      expect(UnicodeUtil.unicodeCharCodeAt(text)).toEqual(text.charCodeAt())
+      expect(UnicodeUtil.unicodeCharCodeAt(text, 0)).toEqual(text.charCodeAt(0))
+      expect(UnicodeUtil.unicodeCharCodeAt(text, 1)).toEqual(text.charCodeAt(1))
+      expect(UnicodeUtil.unicodeCharCodeAt(text, 2)).toEqual(text.charCodeAt(2))
+    it "surrogate", ->
+      text = "𠮷田"
+      expect(UnicodeUtil.unicodeCharCodeAt(text)).toEqual(
+          0x10000 + (text.charCodeAt(0) - 0xD800) * 0x400 +
+          (text.charCodeAt(1) - 0xDC00))
+      expect(UnicodeUtil.unicodeCharCodeAt(text, 0)).toEqual(
+          0x10000 + (text.charCodeAt(0) - 0xD800) * 0x400 +
+          (text.charCodeAt(1) - 0xDC00))
+      expect(UnicodeUtil.unicodeCharCodeAt(text, 1)).toEqual(text.charCodeAt(2))
+
+    text = "𠮷田𠮷田𠮷田𠮷田𠮷田"
+    expect(UnicodeUtil.unicodeCharCodeAt(text), 4).toEqual(
+        0x10000 + (text.charCodeAt(6) - 0xD800) * 0x400 +
+        (text.charCodeAt(7) - 0xDC00))
+    expect(UnicodeUtil.unicodeCharCodeAt(text, 5)).toEqual(text.charCodeAt(8))
+    expect(UnicodeUtil.unicodeCharCodeAt(text, 7)).toEqual(text.charCodeAt(11))

@@ -1,4 +1,4 @@
-{View} = require 'atom'
+{View} = require 'atom-space-pen-views'
 
 module.exports =
 class ScriptOptionsView extends View
@@ -12,31 +12,31 @@ class ScriptOptionsView extends View
             @label 'Current Working Directory:'
             @input
               type: 'text'
-              class: 'editor mini editor-colors native-key-bindings'
+              class: 'editor mini native-key-bindings'
               outlet: 'inputCwd'
           @div class: 'block', =>
             @label 'Command'
             @input
               type: 'text'
-              class: 'editor mini editor-colors native-key-bindings'
+              class: 'editor mini native-key-bindings'
               outlet: 'inputCommand'
           @div class: 'block', =>
             @label 'Command Arguments:'
             @input
               type: 'text'
-              class: 'editor mini editor-colors native-key-bindings'
+              class: 'editor mini native-key-bindings'
               outlet: 'inputCommandArgs'
           @div class: 'block', =>
             @label 'Program Arguments:'
             @input
               type: 'text'
-              class: 'editor mini editor-colors native-key-bindings'
+              class: 'editor mini native-key-bindings'
               outlet: 'inputScriptArgs'
           @div class: 'block', =>
             @label 'Environment Variables:'
             @input
               type: 'text'
-              class: 'editor mini editor-colors native-key-bindings'
+              class: 'editor mini native-key-bindings'
               outlet: 'inputEnv'
           @div class: 'block', =>
             css = 'btn inline-block-tight'
@@ -44,10 +44,10 @@ class ScriptOptionsView extends View
             @button class: "btn #{css}", click: 'run', 'Run'
 
   initialize: (@runOptions) ->
-    atom.workspaceView.command 'script:run-options', => @toggleScriptOptions()
-    atom.workspaceView.command 'script:close-options', =>
+    atom.commands.add 'atom-workspace', 'script:run-options', => @toggleScriptOptions()
+    atom.commands.add 'atom-workspace', 'script:close-options', =>
       @toggleScriptOptions 'hide'
-    atom.workspaceView.command 'script:save-options', => @saveOptions()
+    atom.commands.add 'atom-workspace', 'script:save-options', => @saveOptions()
     atom.workspaceView.prependToTop this
     @toggleScriptOptions 'hide'
 

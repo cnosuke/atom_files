@@ -1,4 +1,5 @@
-# Atom Ctags Package [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
+# Atom Ctags Package  [![Make a donation via Paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=lx1988cyk%40gmail%2ecom&lc=US&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest)
+
 
 This package uses：
 [ctags](http://ctags.sourceforge.net),
@@ -21,11 +22,11 @@ and fork from [symbols-view](https://github.com/atom/symbols-view)
 
 #Install
 **You can install atom-ctags using the Preferences pane.**
-
-autocomplete with ctags dependent on [autocomplete-plus](https://github.com/saschagehlich/autocomplete-plus) already installed.
+And please Make sure that [autocomplete-plus](https://github.com/saschagehlich/autocomplete-plus) already installed.
 
 
 #TODO
+* Merge [symbols-tree-view](https://atom.io/packages/symbols-tree-view)
 * ~~Submit to atom package center~~
 * ~~Modify package name~~
 * Performance optimization
